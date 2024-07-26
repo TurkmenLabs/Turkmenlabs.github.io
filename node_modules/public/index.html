@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="tk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TURKMEN LABS</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1em 0;
+            text-align: center;
+        }
+        main {
+            padding: 20px;
+        }
+        article {
+            background-color: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            margin: 0;
+            padding-bottom: 10px;
+        }
+        p {
+            line-height: 1.6;
+        }
+        a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .contact-button, .login-button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-top: 20px;
+            color: white;
+            background-color: #4CAF50;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .contact-button:hover, .login-button:hover {
+            background-color: #45a049;
+        }
+        footer {
+            text-align: center;
+            padding: 10px 0;
+            background-color: #333;
+            color: white;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+        }
+        #chat-container {
+            display: none;
+            margin-top: 20px;
+        }
+        #messages {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            background-color: #fff;
+        }
+        #new-message {
+            display: flex;
+            margin-top: 10px;
+        }
+        #new-message input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+        #new-message button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+    <!-- Firebase JS SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.6.8/firebase-firestore.js"></script>
+    <!-- Socket.io -->
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <header>
+        <h1>TURKMEN LABS</h1>
+    </header>
+    <main>
+        <article>
+            <h2>Biz Barada</h2>
+            <p>TURKMEN LABS, dürli tehnologik hyzmatlary hödürleýän kompaniýadyr. Biz işläp taýýarlaýarys, maslahat berýäris we tehnologiýa boýunça dürli meseleleri çözüp bilýäris. Islendik hyzmat boýunça bize ýüz tutup bilersiňiz.</p>
+            <p>Biz bilen habarlaşmak üçin e-mail adresimiz: <a href="mailto:turkmenlabs@gmail.com">turkmenlabs@gmail.com</a></p>
+            <a href="mailto:turkmenlabs@gmail.com" class="contact-button">Bize Ýazyň</a>
+        </article>
+        <article>
+            <h2>Hyzmatlarymyz</h2>
+            <p>Biz dürli ugurlar boýunça hyzmatlary hödürleýäris:</p>
+            <ul>
+                <li>Web sahypa taýýarlamak</li>
+                <li>Mobil programma taýýarlaýyş</li>
+                <li>IT maslahat bermek</li>
+                <li>Data analiz we Business Intelligence</li>
+                <li>Bulut hyzmatlary</li>
+            </ul>
+        </article>
+        <article>
+            <h2>Iş wagtymyz</h2>
+            <p>Biz hepdäniň 7 güni, 24 sagat hyzmat berip bilýäris. Her dürli tehniki meselelerde bize islendik wagtda ýüz tutup bilersiňiz.</p>
+        </article>
+        <article>
+            <h2>Agza bolmak</h2>
+            <button onclick="signInWithGoogle()" class="login-button">Google bilen hasaba alyň</button>
+        </article>
+        <div id="chat-container">
+            <h2>Şohbetdeşlik</h2>
+            <div id="messages"></div>
+            <div id="new-message">
+                <input type="text" id="message-input" placeholder="Habar ýaz...">
+                <button onclick="sendMessage()">Iber</button>
+            </div>
+        </div>
+    </main>
+    <footer>
+        &copy; 2024 TURKMEN LABS. Ähli hukuklar goralan.
+    </footer>
+    <script>
+        // Firebase konfigurasiýasy
+        const firebaseConfig = {
+            apiKey: "API_KEY",
+            authDomain: "PROJECT_ID.firebaseapp.com",
+            projectId: "PROJECT_ID",
+            storageBucket: "PROJECT_ID.appspot.com",
+            messagingSenderId: "SENDER_ID",
+            appId: "APP_ID"
+        };
+
+        // Firebase-i initialize etmek
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+
+        // Google bilen hasaba almak
+        const googleProvider = new firebase.auth.GoogleAuthProvider();
+        function signInWithGoogle() {
+            auth.signInWithPopup(googleProvider)
+                .then((result) => {
+                    console.log(result.user);
+                    document.getElementById('chat-container').style.display = 'block';
+                })
+                .catch((error) => {
+                    console.error(error);
+                });
+        }
+
+        // Socket.io baglanyşygy
+        const socket = io();
+
+        // Täze habar ibermek
+        function sendMessage() {
+            const messageInput = document.getElementById('message-input');
+            const message = messageInput.value;
+            socket.emit('chat message', message);
+            messageInput.value = '';
+        }
+
+        // Täze habar almak
+        socket.on('chat message', (msg) => {
+            const messagesDiv = document.getElementById('messages');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = msg;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+    </script>
+</body>
+</html>
